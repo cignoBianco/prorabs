@@ -91,6 +91,8 @@ return [
             'prefix_indexes' => true,
         ],
 
+
+
     ],
 
     /*
@@ -141,6 +143,15 @@ return [
             'port' => env('REDIS_PORT', '6379'),
             'database' => env('REDIS_CACHE_DB', '1'),
         ],
+
+
+        'centrifugo' => [
+            'host' => '127.0.0.1',
+            'password' => '',
+            'port' => 6379,
+            'database' => 1,
+        ],
+
 
     ],
 
