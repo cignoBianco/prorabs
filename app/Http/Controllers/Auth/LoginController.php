@@ -1,52 +1,79 @@
 <?php
 
-namespace App\Http\Controllers\Auth;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Providers\RouteServiceProvider;
-use http\Client\Request;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use Tymon\JWTAuth\Facades\JWTAuth;
+use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Admin;
+use Hash;
+use Validator;
+use Auth;
 
 class LoginController extends Controller
 {
-    /*
-    |--------------------------------------------------------------------------
-    | Login Controller
-    |--------------------------------------------------------------------------
-    |
-    | This controller handles authenticating users for the application and
-    | redirecting them to your home screen. The controller uses a trait
-    | to conveniently provide its functionality to your applications.
-    |
-    */
-
-    use AuthenticatesUsers;
-
-    /**
-     * Where to redirect users after login.
-     *
-     * @var string
-     */
-    protected $redirectTo = RouteServiceProvider::HOME;
-
-    /**
-     * Create a new controller instance.
-     *
-     * @return void
-     */
-    public function __construct()
+    public function userDashboard()
     {
-        $this->middleware('guest')->except('logout');
+        $users = User::all();
+        $success =  $users;
+
+        return response()->json($success, 200);
     }
 
-    public function login(Request $request){
-        $credentials = $request->only(['email', 'password']);
+    public function adminDashboard()
+    {
+        $users = Admin::all();
+        $success =  $users;
 
-        if (!$token = JWTAuth::attempt($credentials)) {
-            return 'Invalid login details';
+        return response()->json($success, 200);
+    }
+
+    public function userLogin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if($validator->fails()){
+            return response()->json(['error' => $validator->errors()->all()]);
         }
 
-        return $token;
+        if(auth()->guard('user')->attempt(['email' => request('email'), 'password' => request('password')])){
+
+            config(['auth.guards.api.provider' => 'user']);
+
+            $user = User::select('users.*')->find(auth()->guard('user')->user()->id);
+            $success =  $user;
+            $success['token'] =  $user->createToken('MyApp',['user'])->accessToken;
+
+            return response()->json($success, 200);
+        }else{
+            return response()->json(['error' => ['Email and Password are Wrong.']], 200);
+        }
+    }
+
+    public function adminLogin(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        if($validator->fails()){
+            return response()->json(['error' => $validator->errors()->all()]);
+        }
+
+        if(auth()->guard('admin')->attempt(['email' => request('email'), 'password' => request('password')])){
+
+            config(['auth.guards.api.provider' => 'admin']);
+
+            $admin = Admin::select('admins.*')->find(auth()->guard('admin')->user()->id);
+            $success =  $admin;
+            $success['token'] =  $admin->createToken('MyApp',['admin'])->accessToken;
+
+            return response()->json($success, 200);
+        }else{
+            return response()->json(['error' => ['Email and Password are Wrong.']], 200);
+        }
     }
 }
